@@ -10,23 +10,31 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import os
 from pathlib import Path
+from dotenv import load_dotenv
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# SECRET KEY (Leer desde entorno y forzar error si no está)
+SECRET_KEY = os.environ.get('SECRET_KEY')
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
+if not SECRET_KEY:
+    # Si la variable de entorno no existe, Django falla al arrancar.
+    # En desarrollo local, puedes usar un archivo .env o configurarla manualmente.
+    raise ValueError("La variable de entorno SECRET_KEY es obligatoria para la seguridad.")
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-=e^4*9ay&g_cpdj-b@svda5z@k#owwfzvtwv*r941lf!ue=sh8'
+# DEBUG (Desactivar en Producción)
+# Leemos el valor de la variable de entorno, por defecto es False si no se encuentra.
+DEBUG = os.environ.get('DEBUG') == 'True'
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = ['18.218.195.175', 'localhost', '127.0.0.1']
-
+# ALLOWED_HOSTS (URLs del servidor)
+# En producción, esto DEBE incluir los dominios/IPs de AWS (EC2/Elastic Beanstalk).
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '').split(',') 
+if DEBUG:
+    ALLOWED_HOSTS += [] # Añade hosts de prueba si DEBUG es True
 
 # Application definition
 
@@ -76,11 +84,12 @@ WSGI_APPLICATION = 'ProyectoSaaS.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'mydb',
-        'USER': 'myuser',
-        'PASSWORD': 'mipassword',
-        'HOST': 'localhost',
-        'PORT': '5432',
+        'NAME': os.environ.get('POSTGRES_DB_NAME', 'ProyectoSaaS'), # Nombre de la DB
+        'USER': os.environ.get('POSTGRES_USER'),                    # Usuario Master de RDS
+        'PASSWORD': os.environ.get('POSTGRES_PASSWORD'),            # Contraseña
+        'HOST': os.environ.get('POSTGRES_HOST'),                    # Endpoint de AWS RDS (ej: mi-db.xyz.us-east-1.rds.amazonaws.com)
+        'PORT': os.environ.get('POSTGRES_PORT', '5432'),            # Puerto por defecto de PostgreSQL
+        'CONN_MAX_AGE': 600,                                        # Opcional, mejora el rendimiento de conexión
     }
 }
 

@@ -3,3 +3,5 @@ pandas
 plotly
 django-plotly-dash
 django-crontab
+psycopg
+gunicorn
